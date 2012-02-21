@@ -92,7 +92,7 @@ value apply(value fn, value ap, alfa lastid, int* envcells, int* channelcntr, in
         force(ap, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
         if (ap->tag == emptyval) 
 //eval(tree x, env rho, alfa lastid, int* channelcntr, int* envcells, int64 processvalues, int* conscells, int* evals)
-            return eval(fn->func.e->lambda.body, fn->func.r, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
+            return eval((tree)fn->func.e->lambda.body, (env)fn->func.r, (int*)lastid, (int*)channelcntr, n, envcells, processvalues, conscells, evals);
         else 
         {
             error("L().e exp", lastid);
