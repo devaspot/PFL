@@ -196,8 +196,9 @@ value eval(tree x, env rho, alfa lastid, int* channelcntr, int* envcells, int64 
 }
 
 /*
-// eval :Exp -> Env -> Value  Note: evaluates an Expression and returns a Value*
-// POST: result tag is not deferval, weak head normal form
+
+ eval :Exp -> Env -> Value  Note: evaluates an Expression and returns a Value*
+ POST: result tag is not deferval, weak head normal form
 {
        value func, switch_, chnl; valueclass proctag;
       void eval_result;
@@ -459,3 +460,4 @@ void execute(tree prog, exec_ctx *c)
      cwrite("%i env cells used, ",  envcells);
      cwrite("%i cells used\n",  conscells);
 }
+*/

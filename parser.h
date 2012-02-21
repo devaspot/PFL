@@ -2,10 +2,11 @@
 #define PARSER_H
 
 #include <stdio.h>
+#include <inttypes.h>
 
 #define IDENTLEN 10
 
-typedef unsigned __int64 int64;
+typedef int64_t int64;
 typedef char alfa[IDENTLEN];
 typedef enum { word, numeral, empty, nilsy, literal, truesy, falsesy, opensy, 
                closesy, sqopen, sqclose, curlopen, curlclose, letsy, recsy, insy, 
