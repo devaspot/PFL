@@ -1,3 +1,5 @@
+// ML runtime
+
 #include <string.h>
 #include <stdlib.h>
 #include "exec.h"
@@ -274,11 +276,11 @@ value eval(tree x, env rho, alfa lastid, int* channelcntr, int *n, int* envcells
 
 void force(value v, alfa lastid, int* channelcntr, int*n, int* envcells, int64 processvalues, int* conscells, int* evals)
 {
-    value fv;
+    value fv=(value)malloc(sizeof(valnode));
     if (v->tag == deferval) 
     {
         fv = eval(v->func.e, v->func.r, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
-        v = fv;
+        *v = *fv;
     }
 }
 
@@ -435,17 +437,17 @@ void execute(tree prog, exec_ctx *c)
 		    1 << stopprocessval;
 
     outputchan = mkchannel(&channelcntr, &n);
-    outputmsg=(tree)malloc(sizeof(tree));
+    outputmsg=(tree)malloc(sizeof(node));
     outputmsg->tag=ident;
     strcpy(outputmsg->id,"x         "); 
-    outputcont=(tree)malloc(sizeof(tree));
+    outputcont=(tree)malloc(sizeof(node));
     outputcont->tag=ident;
     strcpy(outputcont->id,"outputProc"); 
     outputproc = mkprocess2(inprocessval,outputchan,outputmsg,outputcont,(env)0);
     inputchan  = mkchannel(&channelcntr, &n);
-    inputmsg=(tree)malloc(sizeof(tree));
+    inputmsg=(tree)malloc(sizeof(node));
     inputmsg->tag=emptycon;
-    inputcont=(tree)malloc(sizeof(tree));
+    inputcont=(tree)malloc(sizeof(node));
     inputcont->tag=ident;
     strcpy(inputcont->id,"inputProc ");
     inputproc  = mkprocess2(outprocessval,inputchan,inputmsg,inputcont,(env)0);

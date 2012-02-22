@@ -101,3 +101,5 @@ Lazy ML with Calculus of Communicating Systems (introduced by Robin Milner).
         let c=chan in ...          chan returns a new channel
         output                     standard ouput channel
         input                      standard input channel
+
+Максим Сохацкий (maxim@synrc.com)
