@@ -13,10 +13,11 @@ int main(int argc, char *argv[])
     if (argc < 2) stream = stdin; else stream = fopen(argv[1],"r+");
     if (stream==0) { printf("Fail. Cannot open input stream."); exit(1); }
     parser.stream = stream;
-    printf("Parallel ML Jun 2011\n");
+    printf("Synrc ML Feb 2012\n");
     parser_init(&parser);
     program = parse(&parser);
     print(0, program);
+    printf("\n");
     execute(program, &exec);
     return 0;
 }

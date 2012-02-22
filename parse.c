@@ -23,6 +23,7 @@ void getch(parser_ctx *c)
 
 void insymbol(parser_ctx *c)
 {
+    char blank[] = "          ";
     int len=0;
     do { 
         while (c->ch==' ') getch(c);
@@ -38,7 +39,7 @@ void insymbol(parser_ctx *c)
     if (c->ch == EOF) c->sy=eofsy;
     else if (c->ch >= 'a' && c->ch <= 'z' || c->ch >= 'A' && c->ch <= 'Z')                             
     { 
-        strcpy(c->theword,"          "); 
+        strcpy(c->theword, blank); 
         while (c->ch >= 'a' && c->ch <= 'z' || c->ch >= 'A' && c->ch <= 'Z' || c->ch >= '0' && c->ch <= '9')
         {
             if (len<IDENTLEN) c->theword[len++] = c->ch; else c->theword[len]='\0';
