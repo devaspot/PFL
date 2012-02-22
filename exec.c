@@ -68,7 +68,10 @@ value applyenv(env r, alfa x, alfa lastid, int* channelcntr, int *n, int* envcel
 env d2(tree decs, env local, env global, int* envcells)
 { 
     if (decs==0) return global;
-    else return bind(decs->declist.head->decln.name, defer(decs->declist.head->decln.value,local), d2(decs->declist.tail, local, global, envcells), envcells);
+    else return bind(decs->declist.head->decln.name,
+		     defer(decs->declist.head->decln.value,local),
+		     d2(decs->declist.tail, local, global, envcells),
+		     envcells);
 }
 
 env d(tree decs, env rho, int* envcells) // D :Decs -> Env -> Env
@@ -89,7 +92,6 @@ env d(tree decs, env rho, int* envcells) // D :Decs -> Env -> Env
 }
 
 value eval(tree x, env rho, alfa lastid, int* channelcntr, int *n, int* envcells, int64 processvalues, int* conscells, int* evals);
-
 
 value apply(value fn, value ap, alfa lastid, int* envcells, int*n, int* channelcntr, int64 processvalues, int* conscells, int* evals) // apply a function fn to param ap
 {
@@ -189,80 +191,86 @@ value u(symbol opr, value v, alfa lastid, int* channelcntr, int *n, int* envcell
 }
 
 value eval(tree x, env rho, alfa lastid, int* channelcntr, int *n, int* envcells, int64 processvalues, int* conscells, int* evals)
+// eval :Exp -> Env -> Value  Note: evaluates an Expression and returns a Value*
+// POST: result tag is not deferval, weak head normal form
 {
-    value a;
-    return a;
-}
-
-/*
-
- eval :Exp -> Env -> Value  Note: evaluates an Expression and returns a Value*
- POST: result tag is not deferval, weak head normal form
-{
-       value func, switch_, chnl; valueclass proctag;
-      void eval_result;
-      switch (x->tag) {
-         case ident:     eval_result=applyenv(rho, x->id, lastid, channelcntr, n, envcells, processvalues, conscells, evals); break;
-         case intcon:    eval_result=mkint(x->n); break;
-         case boolcon:   eval_result=mkbool(x->b); break;
-         case charcon:   eval_result=mkchar(x->ch); break;
-         case nilcon:    eval_result=mkvalue(nilval); break;
-         case emptycon:  eval_result=mkvalue(emptyval); break;
-         case newchan:   eval_result=mkchannel(channelcntr, n); break;
-         case lambdaexp: eval_result=mkfunc(x, rho); break;
-         case application:
-            { func = eval(x->fun, rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
-                  if (func->tag==funcval) 
-                     eval_result=apply(func, defer(x->aparam, rho), lastid, envcells, channelcntr, n, processvalues, conscells, evals);
-                  else rterror("apply ~fn ", lastid);
-            }
+    value func, switch_, chnl;
+    valueclass proctag;
+    value eval_result;
+    switch (x->tag) {
+        case ident:     eval_result=applyenv(rho, x->id, lastid, channelcntr, n, envcells, processvalues, conscells, evals); break;
+        case intcon:    eval_result=mkint(x->n); break;
+        case boolcon:   eval_result=mkbool(x->b); break;
+        case charcon:   eval_result=mkchar(x->ch); break;
+        case nilcon:    eval_result=mkvalue(nilval); break;
+        case emptycon:  eval_result=mkvalue(emptyval); break;
+        case newchan:   eval_result=mkchannel(channelcntr, n); break;
+        case lambdaexp: eval_result=mkfunc(x, rho); break;
+        case application:
+            func = eval(x->application.func, rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
+            if (func->tag==funcval) 
+		eval_result = apply(func,
+				    defer(x->application.parm, rho),
+				    lastid, envcells, channelcntr, n, processvalues, conscells, evals);
+				    
+            else rterror("apply ~fn ", lastid);
             break;
-         case unexp:   eval_result=u(x->unopr, eval(x->unarg, rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals), lastid, channelcntr, n, envcells, processvalues, conscells, evals); break;
-         case binexp:  if (x->binopr==sequencesy)                   //->
-                     if (x->left->tag == binexp) 
-                     {
-                        if (x->left->binopr == inputsy)         //...?...->
-                        { proctag=inprocessval;
-                              if (x->left->right->tag != ident) 
-                                 rterror("...?~var  ", lastid);
-                        }
-                        else if (x->left->binopr == outputsy)   //...!...->
-                           proctag=outprocessval;
-                        else rterror("~\?/! ->...", lastid);
-                        chnl=eval(x->left->left,rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
-                        if (chnl->tag != channelval)  rterror("chan xpctd", lastid);
-                        eval_result=mkprocess2(proctag,
-                                         chnl,x->left->right,x->right,rho);
-                     }
-                     else rterror("~IO -> ...", lastid);
+        case unexp:   eval_result=u(x->expression.op, eval(x->expression.left, rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals), lastid, channelcntr, n, envcells, processvalues, conscells, evals); break;
+	case binexp:
+	    if (x->expression.op==sequencesy)                   //->
+        	if (x->expression.left->tag == binexp) 
+                {
+            	    if (x->expression.left->expression.op == inputsy)         //...?...->
+                    {
+                	proctag=inprocessval;
+                        if (x->expression.left->expression.right->tag != ident) 
+                    	    rterror("...?~var  ", lastid);
+                    }
+                    else if (x->expression.left->expression.op == outputsy)   //...!...->
+                        proctag=outprocessval;
+                    else rterror("~\?/! ->...", lastid);
+                    
+                    chnl=eval(x->expression.left->expression.left,rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
+                    
+                    if (chnl->tag != channelval) rterror("chan xpctd", lastid);
+                    
+                    eval_result=mkprocess2(proctag,chnl,x->expression.left->expression.right,x->expression.right,rho);
+        	}
+                else rterror("~IO -> ...", lastid);
 
-                  else if (inset(x->binopr, setof(inputsy,outputsy, eos))) 
+             else if (x->expression.op & (1 << inputsy | 1 << outputsy) != 0) 
                      //An action is part of a process, not a Value, ?yet? 
                      // NB. an input action needs a Cont to take in-value  
                      rterror("eval ? | !", lastid);
 
-                  else if (x->binopr==conssy) // cons should not eval ... 
-                       eval_result=o(x->binopr, defer(x->left,rho),
-                                          defer(x->right,rho), lastid, processvalues, conscells);
-                  else eval_result=o(x->binopr, eval(x->left,rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals),   
+	     else if (x->expression.op==conssy) // cons should not eval ... 
+        	eval_result=o(x->expression.op,
+        		      defer(x->expression.left,rho),
+                              defer(x->expression.right,rho),
+                              lastid, processvalues, conscells);
+                              
+	     else eval_result=o(x->expression.op,
+	    			eval(x->expression.left,rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals),   
                                 //others strict
-                                          eval(x->right,rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals), lastid, processvalues, conscells);
-                                          break;
-         case ifexp:
-            { switch_=eval(x->e1, rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
-                  if (switch_->tag==boolval) 
-                     if (switch_->b)  eval_result=eval(x->e2, rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
-                                  else eval_result=eval(x->e3, rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
-                  else rterror("if ~bool  ", lastid);
-            }
+                        	eval(x->expression.right,rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals),
+                        	lastid, processvalues, conscells);
+	    break;
+	case ifexp:
+            switch_=eval(x->ifexp.e1, rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
+            if (switch_->tag==boolval) 
+        	if (switch_->b) eval_result=eval(x->ifexp.e2, rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
+                else eval_result=eval(x->ifexp.e3, rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
+            else rterror("if ~bool  ", lastid);
             break;
-         case block:   eval_result=eval( x->exp, d(x->decs, rho, envcells), lastid, channelcntr, n, envcells, processvalues, conscells, evals);
-         break;
-      }   
-        *evals = *evals + 1; // statistics 
-      return eval_result;
+	case block:
+	    eval_result=eval(x->block.expr,
+			     d(x->block.decs, rho, envcells),
+			     lastid, channelcntr, n, envcells, processvalues, conscells, evals);
+    	    break;
+    }   
+    *evals = *evals + 1; // statistics 
+    return eval_result;
 }
-*/
 
 void force(value v, alfa lastid, int* channelcntr, int*n, int* envcells, int64 processvalues, int* conscells, int* evals)
 {
@@ -385,7 +393,7 @@ int findip(value ip, alfa lastid, int* n, int* channelcntr, int* envcells, int64
       return findip_result;
 }  
 
-int interact(value* processes, alfa lastid, int* n, int* channelcntr, int* envcells, int64 processvalues, int* conscells, int* evals)
+int interact(value processes, alfa lastid, int* n, int* channelcntr, int* envcells, int64 processvalues, int* conscells, int* evals)
 { 
     int interact_result;
     interact_result = findip(processes, lastid, n, channelcntr, envcells, processvalues, conscells, evals, processes);
@@ -453,12 +461,12 @@ void execute(tree prog, exec_ctx *c)
      inputproc->ioproc.pr=sysenv;
 
      processes=mkprocess1(paraprocessval, outputproc,
-               mkprocess1(paraprocessval, eval(prog, sysenv, &lastid, &channelcntr, &n, &envcells, &processvalues, &conscells, &evals),
-                    inputproc, &lastid, &processvalues), &lastid, &processvalues);
+               mkprocess1(paraprocessval, eval(prog, sysenv, lastid, &channelcntr, &n, &envcells, processvalues, &conscells, &evals),
+                    inputproc, lastid, processvalues), lastid, processvalues);
 
-     while (interact(&processes, &lastid, &n, &channelcntr, &envcells, &processvalues, &conscells, &evals)); ///the execution loop
+     while (interact(processes, lastid, &n, &channelcntr, &envcells, processvalues, &conscells, &evals)); ///the execution loop
 
-     n=count(processes, processvalues, &lastid);
+     n=count(processes, processvalues, lastid);
      printf("\n"); printf("%i processes left",  n); if (n>2) printf(" (deadlock)");
      printf("\n"); printf("%i evals, ",  evals);
      printf("%i env cells used, ",  envcells);
