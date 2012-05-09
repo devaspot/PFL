@@ -41,7 +41,7 @@ let rec
     FOUR   = MONUS (TIMES THREE TWO) (PLUS ONE ONE),
     EIGHT  = PLUSb FOUR FOUR
 in
-output ! PRINT (Y FIB (TIMES TWO TWO)) -> stop || COPY 
+output ! PRINT (Y FIB (TIMES TWO TWO)) -> stop
 
 
   

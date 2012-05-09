@@ -48,7 +48,7 @@ void print(int deep, tree t)
             case charcon:     printf("\'%c' ", t->ch); break;
             case emptycon:    printf("()"); break;
             case nilcon:      printf("nil"); break;
-            case newchan:     printf("channel"); break;
+            case newchan:     printf("chan"); break;
             case lambdaexp:   printf("lambda "); print(deep,t->lambda.parm); printf(". "); print(deep,t->lambda.body); break;
             case application: print(deep,t->application.func); printf(" "); print(deep,t->application.parm); break;
             case unexp:       printsy(t->expression.op); printf(" "); print(deep,t->expression.left); break;

@@ -5,7 +5,7 @@
 #include "exec.h"
 
 void  rterror(char *m, alfa lastid) { printf("\nError: %s LastId=%s\n", m, lastid); }
-value checkval(char *m, values vs, value v, alfa lastid) { if (!(v->tag & vs)) rterror(m, lastid); return v; }
+value checkval(char *m, values vs, value v, alfa lastid) { if (v->tag & vs == 0) rterror(m, lastid); return v; }
 value mkvalue(valueclass t) { value p=(value)malloc(sizeof(valnode)); p->tag=t; return p; }
 value mkint(int nn) { value p=(value)malloc(sizeof(valnode)); p->tag=intval; p->n=nn; return p; }
 value mkbool(int bb) { value p=(value)malloc(sizeof(valnode)); p->tag=boolval; p->b=bb; return p; }
@@ -34,12 +34,12 @@ value mkprocess2(valueclass t, value chan, tree m, tree c, env rho)
     return p;
 }
 
-value mkchannel(int* channelcntr, int* n)
+value mkchannel(int* channelcntr)
 {
     value p=(value)malloc(sizeof(valnode));
     p->tag=channelval;  //choice or para, | or ||, NB. pA, pB in WHNF
-    *channelcntr++;
-    *n=*channelcntr;
+    printf("channel %i created\n",*channelcntr);
+    p->n = (*channelcntr)++;
     return p;
 }
 
@@ -128,7 +128,7 @@ value o(symbol opr, value v1, value v2, alfa lastid, int64 processvalues, int* c
 	    o_result = mkprocess1(choiceprocessval, v1, v2, lastid, processvalues);
 	    break;
 	case eq: case ne: case lt: case le: case gt: case ge:
-    	    if (1 << v1->tag && 1 << v2->tag && (1 << intval || 1 << charval || 1 << boolval) != 0)
+    	    if (1 << v1->tag && 1 << v2->tag && (1 << intval | 1 << charval | 1 << boolval) != 0)
 	    switch (v1->tag)
 	    {
 		case intval: { abs1=v1->n; abs2=v2->n; } break;
@@ -147,7 +147,7 @@ value o(symbol opr, value v1, value v2, alfa lastid, int64 processvalues, int* c
             o_result=mkbool(boolans);
             break;        
 	case plus: case minus: case times: case over:
-	    if ( 1 << v1->tag || 1 << v2->tag == 1 << intval) 
+	    if ( (1 << v1->tag | 1 << v2->tag) == (1 << intval)) 
             switch (opr)
             {
         	case plus:  intans=v1->n + v2->n; break;
@@ -158,8 +158,9 @@ value o(symbol opr, value v1, value v2, alfa lastid, int64 processvalues, int* c
             else rterror("arith opr ", lastid);
             o_result=mkint(intans);
             break;
-        case andsy: case orsy:
-            if (1 << v1->tag || 1 <<v2->tag == 1 << boolval) 
+        case andsy: 
+        case orsy:
+            if ((1 << v1->tag | 1 << v2->tag) == (1 << boolval)) 
                switch (opr) {
                case andsy: boolans=v1->b & v2->b; break;
                case orsy:  boolans=v1->b | v2->b;
@@ -206,7 +207,7 @@ value eval(tree x, env rho, alfa lastid, int* channelcntr, int *n, int* envcells
         case charcon:   eval_result=mkchar(x->ch); break;
         case nilcon:    eval_result=mkvalue(nilval); break;
         case emptycon:  eval_result=mkvalue(emptyval); break;
-        case newchan:   eval_result=mkchannel(channelcntr, n); break;
+        case newchan:   eval_result=mkchannel(channelcntr); break;
         case lambdaexp: eval_result=mkfunc(x, rho); break;
         case application:
             func = eval(x->application.func, rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
@@ -220,6 +221,7 @@ value eval(tree x, env rho, alfa lastid, int* channelcntr, int *n, int* envcells
         case unexp:   eval_result=u(x->expression.op, eval(x->expression.left, rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals), lastid, channelcntr, n, envcells, processvalues, conscells, evals); break;
 	case binexp:
 	    if (x->expression.op==sequencesy)                   //->
+            {
         	if (x->expression.left->tag == binexp) 
                 {
             	    if (x->expression.left->expression.op == inputsy)         //...?...->
@@ -229,7 +231,9 @@ value eval(tree x, env rho, alfa lastid, int* channelcntr, int *n, int* envcells
                     	    rterror("...?~var  ", lastid);
                     }
                     else if (x->expression.left->expression.op == outputsy)   //...!...->
+                    {
                         proctag=outprocessval;
+                    } 
                     else rterror("~\?/! ->...", lastid);
                     
                     chnl=eval(x->expression.left->expression.left,rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
@@ -239,19 +243,23 @@ value eval(tree x, env rho, alfa lastid, int* channelcntr, int *n, int* envcells
                     eval_result=mkprocess2(proctag,chnl,x->expression.left->expression.right,x->expression.right,rho);
         	}
                 else rterror("~IO -> ...", lastid);
-
-             else if (x->expression.op & (1 << inputsy | 1 << outputsy) != 0) 
+             }
+             else if ((x->expression.op & (1 << inputsy | 1 << outputsy)) != 0) 
+             {
                      //An action is part of a process, not a Value, ?yet? 
                      // NB. an input action needs a Cont to take in-value  
                      rterror("eval ? | !", lastid);
 
-	     else if (x->expression.op==conssy) // cons should not eval ... 
+	     }
+             else if (x->expression.op==conssy) // cons should not eval ... 
+             {
         	eval_result=o(x->expression.op,
         		      defer(x->expression.left,rho),
                               defer(x->expression.right,rho),
                               lastid, processvalues, conscells);
                               
-	     else eval_result=o(x->expression.op,
+	     }
+             else eval_result=o(x->expression.op,
 	    			eval(x->expression.left,rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals),   
                                 //others strict
                         	eval(x->expression.right,rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals),
@@ -260,9 +268,11 @@ value eval(tree x, env rho, alfa lastid, int* channelcntr, int *n, int* envcells
 	case ifexp:
             switch_=eval(x->ifexp.e1, rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
             if (switch_->tag==boolval) 
-        	if (switch_->b) eval_result=eval(x->ifexp.e2, rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
+            { 
+                if (switch_->b) 
+                     eval_result=eval(x->ifexp.e2, rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
                 else eval_result=eval(x->ifexp.e3, rho, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
-            else rterror("if ~bool  ", lastid);
+            } else rterror("if ~bool  ", lastid);
             break;
 	case block:
 	    eval_result=eval(x->block.expr,
@@ -306,106 +316,140 @@ void showvalue(value v, alfa lastid, int* channelcntr, int*n, int* envcells, int
     }
 }
 
-int complementary(value subip, value subop, alfa lastid, int* n, int* channelcntr, int* envcells, int64 processvalues, int* conscells, int* evals, value op, value ip)
+int complementary(value *subip, value *subop, alfa lastid, int* n, int* channelcntr, int* envcells, int64 processvalues, int* conscells, int* evals, value *op, value *ip)
 {
     int chan;
     value val;
     //?can IP and OP interact?
-    int complementary_result;
-    complementary_result = 0; //unless ...
-    chan   = subip->ioproc.chan->n;
-    if (chan == subop->ioproc.chan->n)  //exchange msg
+    int complementary_result = 0; //unless
+    chan = (*subip)->ioproc.chan->n;
+    if (chan == (*subop)->ioproc.chan->n)  //exchange msg
     {
 	complementary_result=1;
-        if (chan==2)//input 
-                //val:= ...
+        if (chan==1)//input 
+        {        //val:= ...
 	    rterror("not impl  ", lastid);
-        else val=defer(subop->ioproc.msg,subop->ioproc.pr);
+        } else val=defer((*subop)->ioproc.msg,(*subop)->ioproc.pr);
         
-        if (chan==1)  { 
+        if (chan==0)  { 
            printf("\n"); printf(" output "); showvalue(val, lastid, channelcntr, n, envcells, processvalues, conscells, evals); 
         } else {
            printf(" ch%1i ", chan); showvalue(val, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
         }
 
-        op=eval(subop->ioproc.cont,subop->ioproc.pr, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
-        ip=eval(subip->ioproc.cont,bind(subip->ioproc.msg->id,val,subip->ioproc.pr, envcells), lastid, channelcntr, n, envcells, processvalues, conscells, evals);
+//        printf("bop %i\n",(*op)->tag);
+        *op=eval((*subop)->ioproc.cont,(*subop)->ioproc.pr, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
+//        printf("aop %i\n",(*op)->tag);
+
+//        printf("bip %i\n",(*ip)->tag);
+        *ip=eval((*subip)->ioproc.cont,bind((*subip)->ioproc.msg->id,val,(*subip)->ioproc.pr, envcells), lastid, channelcntr, n, envcells, processvalues, conscells, evals);
+//        printf("aip %i\n",(*ip)->tag);
+
     }
     return complementary_result;
 }
                                                   //OP - Output Process
-int traverseop(value subop, value subip, alfa lastid, int* n, int* channelcntr, int* envcells, int64 processvalues, int* conscells, int* evals, value op, value ip)
+int traverseop(value *subop, value *subip, alfa lastid, int* n, int* channelcntr, int* envcells, int64 processvalues, int* conscells, int* evals, value *op, value *ip)
 { 
     //find an output process
-    int traverseop_result;
-    switch (subop->tag) {
-	case inprocessval:     traverseop_result=0; break;
-	case outprocessval:    traverseop_result=//?
-		 complementary(subip, subop, lastid, n, channelcntr, envcells, processvalues, conscells, evals, op, ip); break;
+    int traverseop_result = 0;
+    switch ((*subop)->tag) {
+	case inprocessval: break;
+	case outprocessval: 
+             traverseop_result =
+             complementary(subip, subop, lastid, n, channelcntr, envcells, processvalues, conscells, evals, op, ip); 
+             break;
 	case choiceprocessval:
-	    if (traverseop(subop->proc.p1, subip, lastid, n, channelcntr, envcells, processvalues, conscells, evals, op, ip)) 
+	    if (traverseop(&((*subop)->proc.p1), subip, lastid, n, channelcntr, envcells, processvalues, conscells, evals, op, ip)) 
+            {
                traverseop_result=1;
-            else traverseop_result=traverseop(subop->proc.p2, subip, lastid, n, channelcntr, envcells, processvalues, conscells, evals, op, ip);
+            }
+            else {
+               traverseop_result=traverseop(&((*subop)->proc.p2), subip, lastid, n, channelcntr, envcells, processvalues, conscells, evals, op, ip);
+            }
             break;
-	case stopprocessval:   traverseop_result=0; break; //can't interact!
-	case paraprocessval:   rterror("|| under |", lastid);
-	    break;
+	case stopprocessval: break; //can't interact!
+	case paraprocessval: rterror("|| under |", lastid); break;
     }
     return traverseop_result;
 }
 
-int findop(value op, value subip, alfa lastid, int* n, int* channelcntr, int* envcells, int64 processvalues, int* conscells, int* evals, value ip)
+int findop(value *op, value *subip, alfa lastid, int* n, int* channelcntr, int* envcells, int64 processvalues, int* conscells, int* evals, value *ip)
 { 
     int findop_result;
-      if (op->tag==paraprocessval)   //p1||p2
-           if (findop(op->proc.p1, subip, lastid, n, channelcntr, envcells, processvalues, conscells, evals, ip))  findop_result=1;
-           else findop_result=findop(op->proc.p2, subip, lastid, n, channelcntr, envcells, processvalues, conscells, evals, ip);
-      else findop_result=traverseop(op, subip, lastid, n, channelcntr, envcells, processvalues, conscells, evals, op, ip); 
-        //p1|p2, a->p, stop
-      return findop_result;
+    if ((*op)->tag==paraprocessval)   //p1||p2
+    {
+        if (findop(&((*op)->proc.p1), subip, lastid, n, channelcntr, envcells, processvalues, conscells, evals, ip))  
+        {
+            findop_result=1;
+        }
+        else {
+            findop_result=findop(&((*op)->proc.p2), subip, lastid, n, channelcntr, envcells, processvalues, conscells, evals, ip);
+        }
+    } else 
+    {
+        findop_result=traverseop(op, subip, lastid, n, channelcntr, envcells, processvalues, conscells, evals, op, ip); 
+    }
+    //p1|p2, a->p, stop
+    return findop_result;
 }
                                                   //IP - Input Process
-int traverseip(value subip, alfa lastid, int* n, int* channelcntr, int* envcells, int64 processvalues, int* conscells, int* evals, value ip, value processes)
+int traverseip(value *subip, alfa lastid, int* n, int* channelcntr, int* envcells, int64 processvalues, int* conscells, int* evals, value *ip, value *processes)
 {     //find an input process
-      int traverseip_result;
-      switch (subip->tag) {
-      case inprocessval: traverseip_result=findop(processes, subip, lastid, n, channelcntr, envcells, processvalues, conscells, evals, ip); break;
-      case outprocessval: traverseip_result=0; break;
-      case choiceprocessval: if (traverseip(subip->proc.p1, lastid, n, channelcntr, envcells, processvalues, conscells, evals, ip, processes))  traverseip_result=1;
-                        else traverseip_result=traverseip(subip->proc.p2, lastid, n, channelcntr, envcells, processvalues, conscells, evals, ip, processes);
-                        break;
-      case stopprocessval:   traverseip_result=0; break; //can't interact!
-      case paraprocessval:   rterror("|| under |", lastid);
-      break;
-	}   
+    int traverseip_result = 0;
+    switch ((*subip)->tag)
+    {
+         case inprocessval: 
+              traverseip_result=findop(processes, subip, lastid, n, channelcntr, envcells, processvalues, conscells, evals, ip); break;
+         case outprocessval: 
+              break;
+         case choiceprocessval: 
+              if  (traverseip(&((*subip)->proc.p1), lastid, n, channelcntr, envcells, processvalues, conscells, evals, ip, processes))
+              {
+                   traverseip_result=1;
+              } else traverseip_result=traverseip(&((*subip)->proc.p2), lastid, n, channelcntr, envcells, processvalues, conscells, evals, ip, processes);
+              break;
+         case stopprocessval: break; //can't interact!
+         case paraprocessval: rterror("|| under |", lastid); break;
+    }
     return traverseip_result;
 }
   
 
-int findip(value ip, alfa lastid, int* n, int* channelcntr, int* envcells, int64 processvalues, int* conscells, int* evals, value processes)
+int findip(value *ip, alfa lastid, int* n, int* channelcntr, int* envcells, int64 processvalues, int* conscells, int* evals, value *processes)
 {
-    int findip_result;
-    if (ip->tag==paraprocessval)    //p1||p2
-           if (findip(ip->proc.p1, lastid, n, channelcntr, envcells, processvalues, conscells, evals, processes))
-        	findip_result=1
-        	;
-           else findip_result=findip(ip->proc.p2, lastid, n, channelcntr, envcells, processvalues, conscells, evals, processes);
-      else findip_result=traverseip(ip, lastid, n, channelcntr, envcells, processvalues, conscells, evals, ip, processes);  
-    	//p1|p2, a->p, stop
-      return findip_result;
+    int findip_result = 0;
+    if ((*ip)->tag==paraprocessval)    //p1||p2
+    {
+        if (findip(&((*ip)->proc.p1), lastid, n, channelcntr, envcells, processvalues, conscells, evals, processes) == 1)
+        {
+            findip_result=1;
+        }
+        else { 
+            findip_result=findip(&((*ip)->proc.p2), lastid, n, channelcntr, envcells, processvalues, conscells, evals, processes);
+        }
+    }
+    else 
+    {
+        findip_result=traverseip(ip, lastid, n, channelcntr, envcells, processvalues, conscells, evals, ip, processes);
+    }
+    //p1|p2, a->p, stop
+     return findip_result;
 }  
 
-int interact(value processes, alfa lastid, int* n, int* channelcntr, int* envcells, int64 processvalues, int* conscells, int* evals)
+int interact(value *processes, alfa lastid, int* n, int* channelcntr, int* envcells, int64 processvalues, int* conscells, int* evals)
 { 
     int interact_result;
+//    printf("process type %i\n",(*processes)->tag);
     interact_result = findip(processes, lastid, n, channelcntr, envcells, processvalues, conscells, evals, processes);
+//    printf("process type %i\n",(*processes)->tag);
     return interact_result;
 }
 
 int count(value p, int64 processvalues, alfa lastid)
 {
     int count_result;
-    if (p->tag && processvalues != 0) 
+    if ((p->tag && processvalues) != 0) 
     switch (p->tag) {
         case paraprocessval: count_result=count(p->proc.p1, processvalues, lastid)+count(p->proc.p2, processvalues, lastid); break;
         case choiceprocessval: count_result=(int)(count(p->proc.p1, processvalues, lastid)+count(p->proc.p2, processvalues, lastid) > 0); break;
@@ -428,15 +472,15 @@ void execute(tree prog, exec_ctx *c)
     int n;
 
     evals = 0; envcells = 0; conscells = 0;    //zero counters
-    strcpy(lastid,"start");
+    strcpy(lastid,"start     ");
     channelcntr = 0;
-    processvalues = 1 << inprocessval || 
-		    1 << outprocessval || 
-		    1 << choiceprocessval || 
-		    1 << paraprocessval || 
+    processvalues = 1 << inprocessval |
+		    1 << outprocessval | 
+		    1 << choiceprocessval |
+		    1 << paraprocessval |
 		    1 << stopprocessval;
 
-    outputchan = mkchannel(&channelcntr, &n);
+    outputchan = mkchannel(&channelcntr);
     outputmsg=(tree)malloc(sizeof(node));
     outputmsg->tag=ident;
     strcpy(outputmsg->id,"x         "); 
@@ -444,7 +488,7 @@ void execute(tree prog, exec_ctx *c)
     outputcont->tag=ident;
     strcpy(outputcont->id,"outputProc"); 
     outputproc = mkprocess2(inprocessval,outputchan,outputmsg,outputcont,(env)0);
-    inputchan  = mkchannel(&channelcntr, &n);
+    inputchan  = mkchannel(&channelcntr);
     inputmsg=(tree)malloc(sizeof(node));
     inputmsg->tag=emptycon;
     inputcont=(tree)malloc(sizeof(node));
@@ -457,18 +501,32 @@ void execute(tree prog, exec_ctx *c)
 	    bind("input     ", inputchan,
             bind("inputProc ", inputproc,
             bind("stop      ", mkvalue(stopprocessval),
-    	    (env)0, &envcells), &envcells), &envcells), &envcells), &envcells);
+    	    (env)0,
+            &envcells), &envcells), &envcells), &envcells), &envcells);
     	    
      outputproc->ioproc.pr=sysenv;
      inputproc->ioproc.pr=sysenv;
 
-     processes=mkprocess1(paraprocessval, outputproc,
-               mkprocess1(paraprocessval, eval(prog, sysenv, lastid, &channelcntr, &n, &envcells, processvalues, &conscells, &evals),
-                    inputproc, lastid, processvalues), lastid, processvalues);
+     processes =
+         mkprocess1(
+               paraprocessval,
+               outputproc,
+               mkprocess1(
+                   paraprocessval,
+                   eval(prog, sysenv,
+                        lastid, &channelcntr, &n, &envcells,
+                        processvalues, &conscells, &evals),
+                   inputproc,
+                   lastid,
+                   processvalues),
+              lastid,
+              processvalues);
 
-     while (interact(processes, lastid, &n, &channelcntr, &envcells, processvalues, &conscells, &evals)); ///the execution loop
+     while (interact(&processes, lastid, &n, &channelcntr,
+                     &envcells, processvalues, &conscells, &evals));
 
      n=count(processes, processvalues, lastid);
+
      printf("\n"); printf("%i processes left",  n); if (n>2) printf(" (deadlock)");
      printf("\n"); printf("%i evals, ",  evals);
      printf("%i env cells used, ",  envcells);

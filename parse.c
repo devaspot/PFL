@@ -63,7 +63,7 @@ void insymbol(parser_ctx *c)
         else if (!strcmp(c->theword,"null      ")) c->sy=nullsy;
         else if (!strcmp(c->theword,"true      ")) c->sy=truesy;
         else if (!strcmp(c->theword,"false     ")) c->sy=falsesy;
-        else if (!strcmp(c->theword,"channel   ")) c->sy=chansy;
+        else if (!strcmp(c->theword,"chan      ")) c->sy=chansy;
         else c->sy=word;
     } 
     else if (c->ch >= '0' && c->ch <= '9')

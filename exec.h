@@ -6,10 +6,11 @@
 typedef struct binding* env;
 typedef struct valnode* value;
 typedef struct binding { alfa id; value v; env next; } binding;
-typedef enum {intval, boolval, charval, emptyval, listval, nilval, funcval, deferval,
-              inprocessval, outprocessval,           /*c?x->..., c!e->...*/
-              choiceprocessval, paraprocessval,      /*...|...,  ...||...*/
-              stopprocessval, channelval, last_valueclass} valueclass;
+typedef enum {intval=0, boolval=1, charval=2, emptyval=3, listval=4,
+              nilval=5, funcval=6, deferval=7,
+              inprocessval=8, outprocessval=9,           /*c?x->..., c!e->...*/
+              choiceprocessval=10, paraprocessval=11,      /*...|...,  ...||...*/
+              stopprocessval=12, channelval=13, last_valueclass=14} valueclass;
 typedef int64 values;
 typedef struct valnode {
     valueclass tag;
