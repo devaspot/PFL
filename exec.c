@@ -337,13 +337,8 @@ int complementary(value *subip, value *subop, alfa lastid, int* n, int* channelc
            printf(" ch%1i ", chan); showvalue(val, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
         }
 
-//        printf("bop %i\n",(*op)->tag);
         *op=eval((*subop)->ioproc.cont,(*subop)->ioproc.pr, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
-//        printf("aop %i\n",(*op)->tag);
-
-//        printf("bip %i\n",(*ip)->tag);
         *ip=eval((*subip)->ioproc.cont,bind((*subip)->ioproc.msg->id,val,(*subip)->ioproc.pr, envcells), lastid, channelcntr, n, envcells, processvalues, conscells, evals);
-//        printf("aip %i\n",(*ip)->tag);
 
     }
     return complementary_result;
@@ -440,9 +435,7 @@ int findip(value *ip, alfa lastid, int* n, int* channelcntr, int* envcells, int6
 int interact(value *processes, alfa lastid, int* n, int* channelcntr, int* envcells, int64 processvalues, int* conscells, int* evals)
 { 
     int interact_result;
-//    printf("process type %i\n",(*processes)->tag);
     interact_result = findip(processes, lastid, n, channelcntr, envcells, processvalues, conscells, evals, processes);
-//    printf("process type %i\n",(*processes)->tag);
     return interact_result;
 }
 
@@ -475,10 +468,10 @@ void execute(tree prog, exec_ctx *c)
     strcpy(lastid,"start     ");
     channelcntr = 0;
     processvalues = 1 << inprocessval |
-		    1 << outprocessval | 
-		    1 << choiceprocessval |
-		    1 << paraprocessval |
-		    1 << stopprocessval;
+                    1 << outprocessval | 
+                    1 << choiceprocessval |
+                    1 << paraprocessval |
+                    1 << stopprocessval;
 
     outputchan = mkchannel(&channelcntr);
     outputmsg=(tree)malloc(sizeof(node));

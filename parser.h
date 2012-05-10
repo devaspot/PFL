@@ -21,7 +21,7 @@ typedef struct node* tree;
 typedef struct node { 
     syntaxclass tag;
     union {
-	alfa id; // string
+        alfa id; // string
         int n;   // int
         int b;   // bool
         char ch; // char
@@ -36,7 +36,7 @@ typedef struct node {
 } node;
 typedef struct parser_ctx {
     FILE *stream;
-    int lineno;       
+    int lineno;
     char ch;
     symbol sy;
     alfa theword;
