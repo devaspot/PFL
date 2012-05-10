@@ -332,7 +332,9 @@ int complementary(value *subip, value *subop, alfa lastid, int* n, int* channelc
         } else val=defer((*subop)->ioproc.msg,(*subop)->ioproc.pr);
         
         if (chan==0)  { 
-           printf("\n"); printf(" output "); showvalue(val, lastid, channelcntr, n, envcells, processvalues, conscells, evals); 
+           printf(" output ");
+           showvalue(val, lastid, channelcntr, n, envcells, processvalues, conscells, evals); 
+           printf("\n"); 
         } else {
            printf(" ch%1i ", chan); showvalue(val, lastid, channelcntr, n, envcells, processvalues, conscells, evals);
         }
