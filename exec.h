@@ -1,17 +1,23 @@
+// ML execution
+
 #ifndef EXEC_H
 #define EXEC_H
 
 #include "parser.h"
 
+// bytecodes
+typedef enum { intval, boolval, charval, emptyval, listval,
+               nilval, funcval, deferval,
+               inprocessval, outprocessval,           /* c?x->..., c!e->... */
+               choiceprocessval, paraprocessval,      /* ...|...,  ...||... */
+               stopprocessval, channelval, last_valueclass} valueclass;
+
+// atom table
 typedef struct binding* env;
 typedef struct valnode* value;
 typedef struct binding { alfa id; value v; env next; } binding;
-typedef enum {intval=0, boolval=1, charval=2, emptyval=3, listval=4,
-              nilval=5, funcval=6, deferval=7,
-              inprocessval=8, outprocessval=9,           /*c?x->..., c!e->...*/
-              choiceprocessval=10, paraprocessval=11,      /*...|...,  ...||...*/
-              stopprocessval=12, channelval=13, last_valueclass=14} valueclass;
-typedef int64 values;
+
+// execution
 typedef struct valnode {
     valueclass tag;
     union {
@@ -24,14 +30,15 @@ typedef struct valnode {
         struct { tree e; env r; } func;
     };
 } valnode;
+
 typedef struct exec_ctx {
    int evals, envcells, conscells; // statistics 
-   alfa LastId;                 // debugging
+   alfa lastid;                    // debugging
    int64 processvalues;
-   int ChannelCntr;
-   value Processes, OutputChan, OutputProc, InputChan, InputProc;
-   tree OutputMsg, InputMsg, OutputCont, InputCont;
-   env SysEnv;
+   int channelcntr;
+   value processes, outputchan, outputproc, inputchan, inputproc;
+   tree outputmsg, inputmsg, outputcont, inputcont;
+   env sysenv;
    int n;
 } exec_ctx;
 

@@ -60,7 +60,7 @@ void print(int deep, tree t)
             case block:       printf("let "); 
                               if (t->block.decs->declist.recursive == recsy) printf("rec\n"); else printf("\n");
                               print(deep+1,t->block.decs); printf("\n");
-                              for (i=0;i<deep*TAB;i++) printf(" "); printf("in  "); print(deep+1,t->block.expr);
+                              for (i=0;i<deep*TAB;i++) printf(" "); printf(" in "); print(deep+1,t->block.expr);
                               break;
         }
     }

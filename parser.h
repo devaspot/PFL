@@ -1,3 +1,5 @@
+// AST
+
 #ifndef PARSER_H
 #define PARSER_H
 
@@ -7,23 +9,30 @@
 #define IDENTLEN 10
 
 typedef int64_t int64;
-typedef char alfa[IDENTLEN];
+typedef int64   values;
+typedef char    alfa[IDENTLEN];
+
+// language symbols
 typedef enum { word, numeral, empty, nilsy, literal, truesy, falsesy, opensy, 
                closesy, sqopen, sqclose, curlopen, curlclose, letsy, recsy, insy, 
                comma, colon, ifsy, thensy, elsesy, lambdasy, dot, quote, 
                chansy, sequencesy, parallelsy, choicesy, inputsy, outputsy, conssy, orsy, 
                andsy, eq, ne, lt, le, gt, ge, plus,
                minus, times, over, nullsy, hdsy, tlsy, notsy, unknown, eofsy } symbol;
+
+// language keywords
 typedef enum { ident, intcon, boolcon, charcon, emptycon, nilcon,
                newchan, lambdaexp, application, unexp, binexp, ifexp, block,
                declist, decln } syntaxclass;
+
+// bytecode cells
 typedef struct node* tree;
 typedef struct node { 
     syntaxclass tag;
     union {
         alfa id; // string
-        int n;   // int
-        int b;   // bool
+        int  n;  // int
+        int  b;  // bool
         char ch; // char
         struct { tree parm, body; } lambda;
         struct { tree func, parm; } application;
@@ -34,18 +43,20 @@ typedef struct node {
         struct { tree e1, e2, e3; } ifexp; // not needed
     };
 } node;
+
+// parser 
 typedef struct parser_ctx {
-    FILE *stream;
-    int lineno;
-    char ch;
+    FILE   *stream;
+    int    lineno;
+    char   ch;
     symbol sy;
-    alfa theword;
-    int theint;
-    int oprpriority[eofsy];
-    int64 startsexp;
-    int64 unoprs;
-    int64 binoprs;
-    int64 rightassoc;
+    alfa   theword;
+    int    theint;
+    int    oprpriority[eofsy];
+    int64  startsexp;
+    int64  unoprs;
+    int64  binoprs;
+    int64  rightassoc;
 } parser_ctx;
 
 void parser_init(parser_ctx *context);
