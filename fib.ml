@@ -34,12 +34,11 @@ let rec
     NIL    = lambda f. true,
     NULL   = lambda L. L (lambda h. lambda t. false),
     HD     = lambda L. L (lambda h. lambda t. h),
-    TL     = lambda L. L (lambda h. lambda t. t),
-    Y      = lambda x. lambda g. x g g lambda g. x g g,
-    FAC    = lambda f. lambda n. if n = 0 then 1 else n * f (n - 1),
+    TL     = lambda L. L (lambda h. lambda t. t), 
+    Y = lambda G. (lambda g. G(g g)) (lambda g. G(g g)),
     FIB    = lambda f. lambda n. IF (ISZERO (PRED n)) ONE IF (ISZERO (PP n)) ONE (PLUS (f(PRED n))(f(PP n))),
     THREE  = PLUS ONE TWO,
     FOUR   = MINUS (TIMES THREE TWO) (PLUS ONE ONE),
     EIGHT  = PLUS FOUR FOUR
-in  output ! Y FIB 9 -> stop
+in  output -> 222 -> stop
 

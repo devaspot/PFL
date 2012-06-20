@@ -1,3 +1,3 @@
 let
-   A = lambda x. lambda y. (x + y)
-in output ! A 3 4 -> stop
+   A = lambda n. n * n
+in output ! A 3  -> stop
