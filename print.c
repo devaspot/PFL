@@ -15,7 +15,7 @@ static void printsy(symbol sy)
         case sequencesy: printf("->"); break;
         case inputsy:    printf("?"); break;
         case outputsy:   printf("!"); break;
-        case conssy:     printf(":"); break;
+        case conssy:     printf("::"); break;
         case orsy:       printf("or"); break;
         case andsy:	 printf("and"); break;
         case eq:   	 printf("="); break;

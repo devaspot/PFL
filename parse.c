@@ -47,8 +47,8 @@ void insymbol(parser_ctx *c)
         }
         
 
-             if (!strcmp(c->theword,"head      ")) c->sy=hdsy;  
-        else if (!strcmp(c->theword,"tail      ")) c->sy=tlsy;
+             if (!strcmp(c->theword,"hd        ")) c->sy=hdsy;  
+        else if (!strcmp(c->theword,"tl        ")) c->sy=tlsy;
         else if (!strcmp(c->theword,"lambda    ")) c->sy=lambdasy;
         else if (!strcmp(c->theword,"if        ")) c->sy=ifsy;
         else if (!strcmp(c->theword,"then      ")) c->sy=thensy;

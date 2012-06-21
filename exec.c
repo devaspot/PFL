@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include "exec.h"
 
-void  rterror(char *m, alfa lastid) { printf("\nError: %s LastId=%s\n", m, lastid); }
+void  rterror(char *m, alfa lastid) { printf("\nError: %s LastId=%s\n", m, lastid); exit(1); }
 value checkval(char *m, values vs, value v, alfa lastid) { if (v->tag & vs == 0) rterror(m, lastid); return v; }
 value mkvalue(valueclass t) { value p=(value)malloc(sizeof(valnode)); p->tag=t; return p; }
 value mkint(int nn) { value p=(value)malloc(sizeof(valnode)); p->tag=intval; p->n=nn; return p; }
@@ -18,7 +18,7 @@ value defer(tree x, env rho) { value p=(value)malloc(sizeof(valnode));
                                p->tag=deferval; p->func.e=x; p->func.r=rho; return p; }
 
 value vcons(value h, value t, int *conscells) { value p=(value)malloc(sizeof(valnode)); 
-                                                p->tag=listval; p->list.hd=h; p->list.tl=t; *conscells++; return p; }
+                                                p->tag=listval; p->list.hd=h; p->list.tl=t; (*conscells)++; return p; }
 
 value mkprocess1(valueclass t, value pa, value pb, alfa lastid, int64 processvalues)
 {
@@ -54,7 +54,7 @@ void force(value v, exec_ctx *c);
 env bind(alfa x, value val, env r, int* envcells) // :Ide -> Value -> Env -> Env 
 {
     env p=(env)malloc(sizeof(binding));
-    *envcells++;
+    (*envcells)++;
     strcpy((char*)p->id,(char*)x);
     p->v=val;
     p->next=r;
@@ -280,7 +280,7 @@ void force(value v, exec_ctx *c)
     value fv=(value)malloc(sizeof(valnode));
     if (v->tag == deferval) 
     {
-        fv = eval(v->func.e, v->func.r, c);//lastid, channelcntr, n, envcells, processvalues, conscells, evals);
+        fv = eval(v->func.e, v->func.r, c);
         *v = *fv;
     }
 }
