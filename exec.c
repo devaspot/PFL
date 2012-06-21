@@ -2,14 +2,20 @@
 
 #include <string.h>
 #include <stdlib.h>
+
 #include "exec.h"
+
+int last_proc = 0;
 
 void  rterror(char *m, alfa lastid) { printf("\nError: %s LastId=%s\n", m, lastid); exit(1); }
 value checkval(char *m, values vs, value v, alfa lastid) { if (v->tag & vs == 0) rterror(m, lastid); return v; }
+
+// memory allocators
+
 value mkvalue(valueclass t) { value p=(value)malloc(sizeof(valnode)); p->tag=t; return p; }
-value mkint(int nn) { value p=(value)malloc(sizeof(valnode)); p->tag=intval; p->n=nn; return p; }
-value mkbool(int bb) { value p=(value)malloc(sizeof(valnode)); p->tag=boolval; p->b=bb; return p; }
-value mkchar(char cc) { value p=(value)malloc(sizeof(valnode)); p->tag=charval; p->ch=cc; return p; }
+value mkint(int nn)         { value p=(value)malloc(sizeof(valnode)); p->tag=intval; p->n=nn; return p; }
+value mkbool(int bb)        { value p=(value)malloc(sizeof(valnode)); p->tag=boolval; p->b=bb; return p; }
+value mkchar(char cc)       { value p=(value)malloc(sizeof(valnode)); p->tag=charval; p->ch=cc; return p; }
 
 value mkfunc(tree code, env rho) { value p=(value)malloc(sizeof(valnode)); 
                                    p->tag=funcval; p->func.e=code; p->func.r=rho; return p; }
@@ -44,7 +50,7 @@ value mkchannel(int* channelcntr)
 {
     value p=(value)malloc(sizeof(valnode));
     p->tag=channelval;  //choice or para, | or ||, NB. pA, pB in WHNF
-    printf("channel %i created\n",*channelcntr);
+//    printf("channel %i created\n",*channelcntr);
     p->n = (*channelcntr)++;
     return p;
 }
@@ -101,14 +107,16 @@ env d(tree decs, env rho, int* envcells) // D :Decs -> Env -> Env
 
 value eval(tree x, env rho, exec_ctx *c);
 
-value apply(value fn, value ap, exec_ctx *c) // apply a function fn to param ap
+// application of function to argument (beta-reduction)
+
+value apply(value fn, value ap, exec_ctx *c)
 {
     if (fn->func.e->lambda.parm->tag == emptycon)   // (L().e)ap 
     {
         force(ap, c);
         if (ap->tag == emptyval) 
-	    return eval(fn->func.e->lambda.body, fn->func.r, c);
-        else 
+            return eval(fn->func.e->lambda.body, fn->func.r, c);
+        else
         {
             rterror("L().e exp", c->lastid);
             return 0;
@@ -117,6 +125,8 @@ value apply(value fn, value ap, exec_ctx *c) // apply a function fn to param ap
     else return eval(fn->func.e->lambda.body, bind(fn->func.e->lambda.parm->id, ap, fn->func.r, &(c->envcells)), c);
 }
 
+// binary function
+
 value o(symbol opr, value v1, value v2, exec_ctx *c)
 {
     int abs1, abs2, intans;
@@ -124,28 +134,27 @@ value o(symbol opr, value v1, value v2, exec_ctx *c)
     value o_result;
     switch (opr)
     {
-	case parallelsy: //...||...
-	    o_result = mkprocess1(paraprocessval, v1, v2, c->lastid, c->processvalues);
-	    break;
-	case choicesy:   //...|.... 
-	    o_result = mkprocess1(choiceprocessval, v1, v2, c->lastid, c->processvalues);
-	    break;
-	case eq: case ne: case lt: case le: case gt: case ge:
-    	    if (1 << v1->tag && 1 << v2->tag && (1 << intval | 1 << charval | 1 << boolval) != 0)
-	    switch (v1->tag)
-	    {
-		case intval: { abs1=v1->n; abs2=v2->n; } break;
-		case boolval: { abs1=(int)(v1->b); abs2=(int)(v2->b); } break;
-		case charval: { abs1=(int)(v1->ch); abs2=(int)(v2->ch); } break;
+        case parallelsy: //...||...
+            o_result = mkprocess1(paraprocessval, v1, v2, c->lastid, c->processvalues);
+            break;
+        case choicesy:   //...|.... 
+            o_result = mkprocess1(choiceprocessval, v1, v2, c->lastid, c->processvalues);
+            break;
+        case eq: case ne: case lt: case le: case gt: case ge:
+            if (1 << v1->tag && 1 << v2->tag && (1 << intval | 1 << charval | 1 << boolval) != 0)
+            switch (v1->tag)
+            {
+                case intval: { abs1=v1->n; abs2=v2->n; } break;
+                case boolval: { abs1=(int)(v1->b); abs2=(int)(v2->b); } break;
+                case charval: { abs1=(int)(v1->ch); abs2=(int)(v2->ch); } break;
             }
             else
-        	rterror("relation operation ", c->lastid);
-        	
+                rterror("relation operation ", c->lastid);
             switch (opr)
             {
-        	case eq: boolans=abs1==abs2; break; case ne: boolans=abs1!=abs2; break;
-        	case le: boolans=abs1<=abs2; break; case lt: boolans=abs1< abs2; break;
-        	case ge: boolans=abs1>=abs2; break; case gt: boolans=abs1> abs2; break;
+                case eq: boolans=abs1==abs2; break; case ne: boolans=abs1!=abs2; break;
+                case le: boolans=abs1<=abs2; break; case lt: boolans=abs1< abs2; break;
+                case ge: boolans=abs1>=abs2; break; case gt: boolans=abs1> abs2; break;
             }
             o_result=mkbool(boolans);
             break;        
@@ -179,12 +188,15 @@ value o(symbol opr, value v1, value v2, exec_ctx *c)
     return o_result;
 }
 
+// unary function
+
 value u(symbol opr, value v, exec_ctx *c)
 {
     value u_result;
     switch (opr) {
 	case minus: if (v->tag==intval) u_result = mkint(-v->n); else rterror("- non int ", c->lastid); break;
 	case notsy: if (v->tag==boolval) u_result = mkbool(~ v->b); else rterror("not ~bool ", c->lastid); break;
+	case spawnsy: if (v->tag==funcval) u_result = mkfunc(v->func.e,v->func.r); else rterror("not ~bool ", c->lastid); break;
 	case hdsy:  if (v->tag==listval) { force(v->list.hd, c);
 					   u_result = v->list.hd; } else rterror("hd ~list  ", c->lastid); break;
 	case tlsy:  if (v->tag==listval) { force(v->list.tl, c);
@@ -194,6 +206,8 @@ value u(symbol opr, value v, exec_ctx *c)
     }
     return u_result;
 }
+
+void bootstrap(tree prog, exec_ctx *c);
 
 value eval(tree x, env rho, exec_ctx *c)
 {
@@ -213,7 +227,14 @@ value eval(tree x, env rho, exec_ctx *c)
                           if (func->tag==funcval) eval_result = apply(func, defer(x->application.parm, rho), c);
                           else rterror("apply ~fn ", c->lastid);
                           break;
-        case unexp:       eval_result=u(x->expression.op, eval(x->expression.left, rho, c), c); break;
+        case unexp:
+            if (x->expression.op == spawnsy) {
+                 exec_ctx *proc = &proctable[last_proc++];
+                 bootstrap(x->expression.left, proc);
+                 eval_result->tag = procid;
+                 eval_result->n = last_proc-1;
+            } else
+                eval_result=u(x->expression.op, eval(x->expression.left, rho, c), c); break;
 	case binexp:
 	    if (x->expression.op==sequencesy)                   //->
             {
@@ -287,6 +308,7 @@ void force(value v, exec_ctx *c)
 
 void showvalue(value v, exec_ctx *c)
 {
+//    printf("show: %i",v->tag);
     switch (v->tag)
     {
 	case intval:  printf("%1i",  v->n); break;
@@ -294,6 +316,7 @@ void showvalue(value v, exec_ctx *c)
         case charval: printf("%c",  v->ch ); break;
         case emptyval:printf("{}" ); break;
         case nilval:  printf("nil"); break;
+        case procid:  printf("<0.%i>", v->n); break;
         case listval: { printf("{");
     			showvalue(v->list.hd, c); 
     			printf(",");
@@ -307,6 +330,8 @@ void showvalue(value v, exec_ctx *c)
     			showvalue(v, c); } break; // evaluation is o/p driven 
     }
 }
+
+// process calculus
 
 int complementary(value *ip, value subip, value *op, value subop, exec_ctx *c)
 {
@@ -388,7 +413,7 @@ int traverseip(value *ip, value subip, exec_ctx *c) //find an input process
     }
     return traverseip_result;
 }
-  
+
 int findip(value *ip, exec_ctx *c)
 {
     int findip_result = 0;
@@ -431,7 +456,7 @@ int count(value p, int64 processvalues, alfa lastid)
     return count_result;
 }
 
-void execute(tree prog, exec_ctx *c)
+void bootstrap(tree prog, exec_ctx *c)
 {
     c->evals = 0; c->envcells = 0; c->conscells = 0;    //zero counters
     strcpy(c->lastid,"start     ");
@@ -482,12 +507,41 @@ void execute(tree prog, exec_ctx *c)
               c->lastid,
               c->processvalues);
 
-     while (interact(c));
+    printf("\n--------------\n");
+    print(0, prog);
+    printf("\n--------------\n");
 
-     c->n=count(c->processes, c->processvalues, c->lastid);
-
-     printf("\n"); printf("%i processes left",  c->n); if (c->n>2) printf(" (deadlock)");
-     printf("\n"); printf("%i evals, ",  c->evals);
-     printf("%i env cells used, ",  c->envcells);
-     printf("%i cells used\n",  c->conscells);
 }
+
+
+int inc_proc(int a) { return last_proc += a; }
+
+void execute(tree prog, exec_ctx *c)
+{
+    int i = 0, xxx = 0;
+    int has_running_procs = 1;
+
+    bootstrap(prog, c);
+
+    while (has_running_procs)
+    {
+        has_running_procs = 0;
+        i = 0;
+        while (i < last_proc)
+        {
+            exec_ctx *proc = &proctable[i];
+//            printf("\nproc: %i\n", i);
+            if (interact(proc)) has_running_procs = 1;
+            i++;
+        }
+    }
+
+    c->n=count(c->processes, c->processvalues, c->lastid);
+
+    printf("\n"); printf("%i processes left",  c->n); if (c->n>2) printf(" (deadlock)");
+    printf("\n"); printf("%i evals, ",  c->evals);
+    printf("procs: %i\n", last_proc);
+    printf("%i env cells used, ",  c->envcells);
+    printf("%i cells used\n",  c->conscells);
+}
+

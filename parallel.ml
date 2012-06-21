@@ -6,9 +6,11 @@ let rec
     gen3 = gch!7 -> gch!8 -> gch!9 -> stop,
     gch = chan,
     listen = lambda inch. 
-        inch?p -> output!p ->
+        inch ? p -> output!p ->
         let rec filter = inch?x -> connect!x -> filter,
                 connect = chan
              in filter || listen connect
 
  in gen1 || listen gch || gen3 || gen2
+
+

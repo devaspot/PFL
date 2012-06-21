@@ -18,7 +18,7 @@ typedef enum { word, numeral, empty, nilsy, literal, truesy, falsesy, opensy,
                comma, colon, ifsy, thensy, elsesy, lambdasy, dot, quote, 
                chansy, sequencesy, parallelsy, choicesy, inputsy, outputsy, conssy, orsy, 
                andsy, eq, ne, lt, le, gt, ge, plus,
-               minus, times, over, nullsy, hdsy, tlsy, notsy, unknown, eofsy } symbol;
+               minus, times, over, nullsy, hdsy, tlsy, notsy, spawnsy, unknown, eofsy } symbol;
 
 // language keywords
 typedef enum { ident, intcon, boolcon, charcon, emptycon, nilcon,

@@ -5,12 +5,14 @@
 
 #include "parser.h"
 
+#define MAXFUN 1024
+
 // bytecodes
 typedef enum { intval, boolval, charval, emptyval, listval,
                nilval, funcval, deferval,
                inprocessval, outprocessval,           /* c?x->..., c!e->... */
                choiceprocessval, paraprocessval,      /* ...|...,  ...||... */
-               stopprocessval, channelval, last_valueclass} valueclass;
+               stopprocessval, channelval, last_valueclass, procid} valueclass;
 
 // atom table
 typedef struct binding* env;
@@ -42,6 +44,9 @@ typedef struct exec_ctx {
    int n;
 } exec_ctx;
 
+exec_ctx proctable[MAXFUN];
+
 void execute(tree prog, exec_ctx *c);
+int inc_proc(int a);
 
 #endif

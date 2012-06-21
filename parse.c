@@ -60,6 +60,7 @@ void insymbol(parser_ctx *c)
         else if (!strcmp(c->theword,"and       ")) c->sy=andsy;
         else if (!strcmp(c->theword,"not       ")) c->sy=notsy;
         else if (!strcmp(c->theword,"nil       ")) c->sy=nilsy;
+        else if (!strcmp(c->theword,"spawn     ")) c->sy=spawnsy;
         else if (!strcmp(c->theword,"null      ")) c->sy=nullsy;
         else if (!strcmp(c->theword,"true      ")) c->sy=truesy;
         else if (!strcmp(c->theword,"false     ")) c->sy=falsesy;
@@ -268,7 +269,7 @@ void parser_init(parser_ctx *context)
     context->startsexp  = (int64)1 << opensy | (int64)1 << letsy | (int64)1 << ifsy | 
                           (int64)1 << lambdasy | (int64)1 << chansy | context->unoprs | 0x7F;
     context->rightassoc = (int64)1 << conssy | (int64)1 << sequencesy;
-    context->unoprs     = (int64)1 << minus | (int64)1 << hdsy | (int64)1 << tlsy | (int64)1 << nullsy | (int64)1 << notsy;
+    context->unoprs     = (int64)1 << minus | (int64)1 << hdsy | (int64)1 << tlsy | (int64)1 << nullsy | (int64)1 << notsy | (int64)1 << spawnsy;
     context->binoprs    = (int64)1 << sequencesy | (int64)1 << parallelsy | (int64)1 << choicesy | (int64)1 << inputsy |
                           (int64)1 << outputsy | (int64)1 << conssy | (int64)1 << orsy | (int64)1 << andsy |
                           (int64)1 << eq | (int64)1 << ne | (int64)1 << lt | (int64)1 << le | (int64)1 << gt |

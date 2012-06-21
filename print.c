@@ -30,6 +30,7 @@ static void printsy(symbol sy)
         case over: 	 printf("/"); break;
         case hdsy:	 printf("head"); break;   
         case tlsy: 	 printf("tail"); break;
+        case spawnsy: 	 printf("spawn"); break;
         case nullsy:	 printf("null"); break; 
         case notsy:      printf("not"); break;
     }
