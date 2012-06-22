@@ -62,5 +62,6 @@ typedef struct parser_ctx {
 void parser_init(parser_ctx *context);
 tree parse(parser_ctx *context);
 void print(int deep, tree t);
+tree newnode(syntaxclass c);
 
 #endif

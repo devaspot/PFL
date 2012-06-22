@@ -12,6 +12,31 @@ value checkval(char *m, values vs, value v, alfa lastid) { if (v->tag & vs == 0)
 
 // memory allocators
 
+tree copy(tree source)
+{
+    if (source == 0) return 0;
+    tree n = newnode(source->tag);
+    switch (source->tag)
+    {
+        case ident: strcpy(n->id, source->id); break;
+        case intcon: n->n = source->n; break;
+        case boolcon: n->b = source->b; break;
+        case charcon: n->ch = source->ch; break;
+        case lambdaexp: n->lambda.parm = copy(source->lambda.parm); n->lambda.body = copy(source->lambda.body); break;
+        case application: n->application.func = copy(source->application.func); n->application.parm = copy(source->application.parm); break;
+        case block: n->block.decs = copy(source->block.decs); n->block.expr = copy(source->block.expr); break;
+        case decln: n->decln.value = copy(source->decln.value); strcpy(n->decln.name,source->decln.name); break;
+        case declist: n->declist.head = copy(source->declist.head); n->declist.tail = copy(source->declist.tail); n->declist.recursive = source->declist.recursive; break;
+        case ifexp: n->ifexp.e1 = copy(source->ifexp.e1); n->ifexp.e2 = copy(source->ifexp.e2); n->ifexp.e3 = copy(source->ifexp.e3); break;
+        case binexp: 
+        case unexp: n->expression.op = source->expression.op; n->expression.left = copy(source->expression.left); 
+                                                              n->expression.right = copy(source->expression.right); break;
+    }
+
+//    print(4,n);
+    return n;
+}
+
 value mkvalue(valueclass t) { value p=(value)malloc(sizeof(valnode)); p->tag=t; return p; }
 value mkint(int nn)         { value p=(value)malloc(sizeof(valnode)); p->tag=intval; p->n=nn; return p; }
 value mkbool(int bb)        { value p=(value)malloc(sizeof(valnode)); p->tag=boolval; p->b=bb; return p; }
@@ -209,11 +234,14 @@ value u(symbol opr, value v, exec_ctx *c)
 
 void bootstrap(tree prog, exec_ctx *c);
 
-value eval(tree x, env rho, exec_ctx *c)
+value eval(tree x, env rho, exec_context c)
 {
     value func, switch_, chnl;
     valueclass proctag;
     value eval_result;
+    tree xx;
+    exec_context tail;
+
     switch (x->tag) {
         case ident:       eval_result=applyenv(rho, x->id, c); break;
         case intcon:      eval_result=mkint(x->n); break;
@@ -228,11 +256,18 @@ value eval(tree x, env rho, exec_ctx *c)
                           else rterror("apply ~fn ", c->lastid);
                           break;
         case unexp:
-            if (x->expression.op == spawnsy) {
-                 exec_ctx *proc = &proctable[last_proc++];
+            if (x->expression.op == spawnsy)
+            {
+                 c->evals++;
+                 exec_context proc = (exec_context)malloc(sizeof(exec_ctx));//proctable[last_proc];
+                 proc->next = NULL;
+                 while (c->next) c = c->next;
+                 c->next = proc;
                  bootstrap(x->expression.left, proc);
                  eval_result->tag = procid;
-                 eval_result->n = last_proc-1;
+                 eval_result->n = last_proc;
+                 last_proc++;
+                 return eval_result;
             } else
                 eval_result=u(x->expression.op, eval(x->expression.left, rho, c), c); break;
 	case binexp:
@@ -257,6 +292,7 @@ value eval(tree x, env rho, exec_ctx *c)
                     if (chnl->tag != channelval) rterror("chan expected", c->lastid);
                     
                     eval_result=mkprocess2(proctag,chnl,x->expression.left->expression.right,x->expression.right,rho);
+
         	}
                 else rterror("~IO -> ...", c->lastid);
              }
@@ -308,7 +344,6 @@ void force(value v, exec_ctx *c)
 
 void showvalue(value v, exec_ctx *c)
 {
-//    printf("show: %i",v->tag);
     switch (v->tag)
     {
 	case intval:  printf("%1i",  v->n); break;
@@ -326,8 +361,8 @@ void showvalue(value v, exec_ctx *c)
         case inprocessval: case outprocessval: case choiceprocessval: case paraprocessval: printf("process"); break;
         case stopprocessval: printf("stop"); break;
         case channelval: printf("chan%1i", v->n); break;
-        case deferval:{ force(v, c); 
-    			showvalue(v, c); } break; // evaluation is o/p driven 
+        case deferval:{ force(v, c);
+                        showvalue(v, c); } break; // evaluation is o/p driven 
     }
 }
 
@@ -507,33 +542,27 @@ void bootstrap(tree prog, exec_ctx *c)
               c->lastid,
               c->processvalues);
 
-    printf("\n--------------\n");
-    print(0, prog);
-    printf("\n--------------\n");
+//    printf("--------------\n");
+//    print(0, prog);
+//    printf("\n--------------");
 
 }
 
-
-int inc_proc(int a) { return last_proc += a; }
-
-void execute(tree prog, exec_ctx *c)
+void execute(tree prog, exec_context c)
 {
     int i = 0, xxx = 0;
-    int has_running_procs = 1;
+    int alive = 1;
+    exec_context proc;
+
+    last_proc = 1;
 
     bootstrap(prog, c);
 
-    while (has_running_procs)
+    while (alive)
     {
-        has_running_procs = 0;
-        i = 0;
-        while (i < last_proc)
-        {
-            exec_ctx *proc = &proctable[i];
-//            printf("\nproc: %i\n", i);
-            if (interact(proc)) has_running_procs = 1;
-            i++;
-        }
+        alive = 0;
+        proc = c;
+        while (proc) { if (interact(proc)) alive = 1; proc = proc->next; }
     }
 
     c->n=count(c->processes, c->processvalues, c->lastid);

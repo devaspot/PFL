@@ -33,6 +33,7 @@ typedef struct valnode {
     };
 } valnode;
 
+typedef struct exec_ctx* exec_context;
 typedef struct exec_ctx {
    int evals, envcells, conscells; // statistics 
    alfa lastid;                    // debugging
@@ -42,11 +43,11 @@ typedef struct exec_ctx {
    tree outputmsg, inputmsg, outputcont, inputcont;
    env sysenv;
    int n;
+   exec_context next;
 } exec_ctx;
 
 exec_ctx proctable[MAXFUN];
 
 void execute(tree prog, exec_ctx *c);
-int inc_proc(int a);
 
 #endif
