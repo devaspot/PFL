@@ -7,7 +7,7 @@
 //
 // Future Tasks: TI   Type Inference
 //               DT   Dependent Types
-//               LLVM Compilation
+//               BC   G-Machine Compilation
 //
 // Homepage:     http://github.com/synrc/research-ml
 // Authors:      Maxim Sokhatsky <maxim@synrc.com>
