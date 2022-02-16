@@ -13,6 +13,13 @@ Lazy ML with Calculus of Communicating Systems (introduced by Robin Milner).
 
 1. Максим Сохацкий. <a href="https://tonpa.guru/stream/2012/2012-06-22%20%D0%9B%D0%B5%D0%BD%D0%B8%D0%B2%D1%8B%D0%B9%20ML%20%D1%81%20pi-calculus%20%D0%B2%2026%D0%9A%D0%91.htm">Ленивый ML с π-calculus в 26КБ</a>, 2012.
 
+Библиография
+------------
+
+[1]. S. Holmstrom. PFL: a functional language for parallel programming and its implementation. 1983
+[2]. K. Mitchell. A user's guide to PFL. 1984
+[3]. L. Allison. <a href="http://www.allisons.org/ll/FP/LambdaCCS/">The PFL interpreter</a>. 1993
+
 Операции виртуальной машины
 ---------------------------
 
