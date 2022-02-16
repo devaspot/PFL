@@ -1,8 +1,8 @@
 
-LML with CCS
+PFL with CCS
 ============
 
-Lazy ML with Calculus of Communicating Systems (introduced by Robin Milner).
+Parallel Functional Language with Calculus of Communicating Systems (introduced by Robin Milner).
 Язык который предназначен для образовательных целей, что бы можно было
 "на пальцах" показать, как создать функциальный язык основанный на λ-исчислении.
 Для перчинки в язык инкапсулированы ленивость и исчисление процессов,
