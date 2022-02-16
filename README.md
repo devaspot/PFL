@@ -1,4 +1,3 @@
-
 PFL with CCS
 ============
 
@@ -27,6 +26,7 @@ Parallel Functional Language with Calculus of Communicating Systems (introduced 
 собой дерево хранящееся в последовательности операторов виртуальной машины.
 Оно может быть полностью декомпилировано в исходный код программы.
 
+```
     quote
     lambda
     application
@@ -36,6 +36,7 @@ Parallel Functional Language with Calculus of Communicating Systems (introduced 
     declist
     ifexp
     matchexp
+```
 
 Среда виртуальной машины
 ------------------------
@@ -43,15 +44,18 @@ Parallel Functional Language with Calculus of Communicating Systems (introduced 
 Среда именованых значений представляет собой список именованых значений.
 Само значение представляет собой...
 
+```
     proc     | , ||
     ioproc   c ? x -> ..., c ! e -> ...
     value    .
     list
     func
+```
 
 Контекст исполнения
 -------------------
 
+```
     struct exec_ctx {
         int evals, envcells, conscells; // statistics 
         alfa LastId;                 { debugging}
@@ -62,6 +66,7 @@ Parallel Functional Language with Calculus of Communicating Systems (introduced 
         env SysEnv;
         int n;
     } exec_ctx;
+```
 
 Выражения языка
 ---------------
@@ -73,6 +78,7 @@ Parallel Functional Language with Calculus of Communicating Systems (introduced 
 Таким образом, базовая часть лямбда исчисления представляет собой только фунциональные
 определения и выражение, так называемый let rec.
 
+```
     program ::= exp
     exp ::= ident | numeral | 'letter' | () | true | false | nil |
         ( exp ) | unopr exp | exp binopr exp |
@@ -93,18 +99,22 @@ Parallel Functional Language with Calculus of Communicating Systems (introduced 
 	    * /                  6
 	    application          7 { left associative, f x y = (f(x))(y) }
 	    - head tail null not 8 { unary - }
+```
 
 Часть языка, котая отвечает за исчисление процессов моделирует
 
+```
     processes:
         process1 || process2       p1 and p2 in parallel
         process1 |  process2       choice of either p1 or p2
         action -> process          sequence
         stop                       null process
+```
 
-Существует известное ограничивающее правило находжения оператора || ниже
-оператора | Например выражение (p1||p2)|p3 является недопустимым.
+Существует известное ограничивающее правило находжения оператора `||` ниже
+оператора `|` Например выражение `(p1||p2)|p3` является недопустимым.
 
+```
     actions:
         channel ? variable         input  action
         channel ! expression       output action
@@ -113,5 +123,10 @@ Parallel Functional Language with Calculus of Communicating Systems (introduced 
         let c=chan in ...          chan returns a new channel
         output                     standard ouput channel
         input                      standard input channel
+```
 
-Максим Сохацкий (maxim@synrc.com)
+Автор
+-----
+
+* Максим Сохацкий
+
