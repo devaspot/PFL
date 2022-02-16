@@ -16,9 +16,9 @@ Lazy ML with Calculus of Communicating Systems (introduced by Robin Milner).
 Библиография
 ------------
 
-[1]. S. Holmstrom. PFL: a functional language for parallel programming and its implementation. 1983
-[2]. K. Mitchell. A user's guide to PFL. 1984
-[3]. L. Allison. <a href="http://www.allisons.org/ll/FP/LambdaCCS/">The PFL interpreter</a>. 1993
+* [1]. S. Holmstrom. PFL: a functional language for parallel programming and its implementation. 1983
+* [2]. K. Mitchell. A user's guide to PFL. 1984
+* [3]. L. Allison. <a href="http://www.allisons.org/ll/FP/LambdaCCS/">The PFL interpreter</a>. 1993
 
 Операции виртуальной машины
 ---------------------------
